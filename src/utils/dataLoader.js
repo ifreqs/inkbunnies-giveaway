@@ -206,3 +206,175 @@ export async function saveWinningWalletsToCSV(contestResults, filename = 'winnin
   return filePath;
 }
 
+/**
+ * Saves contest results with all logs and statistics to CSV
+ * @param {Object} contestResultsData - Full contest results data from JSON file
+ * @param {string} filename - Output CSV filename (default: contest_logs.csv)
+ * @returns {Promise<string>} Path to the saved CSV file
+ */
+export async function saveContestLogsToCSV(contestResultsData, filename = 'contest_logs.csv') {
+  const rows = [];
+  
+  // Header row
+  const headers = [
+    'Timestamp',
+    'Category',
+    'Tier',
+    'RequestedWinners',
+    'AwardedWinners',
+    'Address',
+    'TokenCount',
+    'Tokens',
+    'RewardType',
+    'TotalTickets',
+    'TotalEntries',
+    'EligibleHolders',
+    'TotalTokens'
+  ];
+  
+  const timestamp = contestResultsData.timestamp || '';
+  const totals = contestResultsData.totals || {};
+  const eligibleHolders = totals.eligibleHolders || 0;
+  const totalTokens = totals.totalTokens || 0;
+  
+  // Tier results
+  if (contestResultsData.tierResults) {
+    for (const [tier, info] of Object.entries(contestResultsData.tierResults)) {
+      const requestedWinners = info.requestedWinners || 0;
+      const awardedWinners = info.winners ? info.winners.length : 0;
+      
+      if (info.winners && info.winners.length > 0) {
+        for (const winner of info.winners) {
+          rows.push([
+            timestamp,
+            'Tier Result',
+            tier,
+            requestedWinners,
+            awardedWinners,
+            winner.address || '',
+            winner.tokenCount || 0,
+            winner.tokens ? winner.tokens.join(';') : '',
+            'Tier Winner',
+            '',
+            '',
+            eligibleHolders,
+            totalTokens
+          ]);
+        }
+      } else {
+        // Empty tier result
+        rows.push([
+          timestamp,
+          'Tier Result',
+          tier,
+          requestedWinners,
+          awardedWinners,
+          '',
+          '',
+          '',
+          'Tier Winner',
+          '',
+          '',
+          eligibleHolders,
+          totalTokens
+        ]);
+      }
+    }
+  }
+  
+  // Whale rewards
+  if (contestResultsData.whaleRewards && Array.isArray(contestResultsData.whaleRewards)) {
+    for (const whale of contestResultsData.whaleRewards) {
+      rows.push([
+        timestamp,
+        'Whale Reward',
+        'Whale Bunnie',
+        'All',
+        '1',
+        whale.address || '',
+        whale.tokenCount || 0,
+        whale.tokens ? whale.tokens.join(';') : '',
+        'Guaranteed Reward',
+        '',
+        '',
+        eligibleHolders,
+        totalTokens
+      ]);
+    }
+  }
+  
+  // Exclusive raffle
+  if (contestResultsData.exclusiveRaffle) {
+    const exclusive = contestResultsData.exclusiveRaffle;
+    const totalTickets = exclusive.totalTickets || 0;
+    const totalEntries = exclusive.entries || 0;
+    
+    if (exclusive.winner) {
+      rows.push([
+        timestamp,
+        'Exclusive Raffle',
+        'Exclusive',
+        '1',
+        '1',
+        exclusive.winner.address || '',
+        exclusive.winner.tokenCount || 0,
+        exclusive.winner.tokens ? exclusive.winner.tokens.join(';') : '',
+        '1/1 Exclusive NFT',
+        totalTickets,
+        totalEntries,
+        eligibleHolders,
+        totalTokens
+      ]);
+    } else {
+      rows.push([
+        timestamp,
+        'Exclusive Raffle',
+        'Exclusive',
+        '1',
+        '0',
+        '',
+        '',
+        '',
+        '1/1 Exclusive NFT',
+        totalTickets,
+        totalEntries,
+        eligibleHolders,
+        totalTokens
+      ]);
+    }
+  }
+  
+  // Summary row
+  rows.push([
+    timestamp,
+    'Summary',
+    'All Tiers',
+    '',
+    '',
+    '',
+    '',
+    '',
+    'Total Winners',
+    contestResultsData.exclusiveRaffle?.totalTickets || '',
+    contestResultsData.exclusiveRaffle?.entries || '',
+    eligibleHolders,
+    totalTokens
+  ]);
+  
+  // Convert to CSV
+  const csvRows = rows.map(row => 
+    row.map(cell => {
+      // Escape commas and quotes in CSV
+      if (typeof cell === 'string' && (cell.includes(',') || cell.includes('"') || cell.includes('\n'))) {
+        return `"${cell.replace(/"/g, '""')}"`;
+      }
+      return cell;
+    }).join(',')
+  );
+  
+  const csvContent = [headers.join(','), ...csvRows].join('\n');
+  const filePath = path.join(__dirname, '../../data', filename);
+  await fs.writeFile(filePath, csvContent, 'utf-8');
+  return filePath;
+}
+
