@@ -6,9 +6,9 @@
 /**
  * Classify holders by token count (tier-based grouping)
  * Tier definitions:
- * - Bunnie Holder: 1-5 tokens (5 dahil deÄŸil, yani 1 â‰¤ x < 5)
- * - Bunnie Believer: 5-10 tokens (10 dahil deÄŸil, yani 5 â‰¤ x < 10)
- * - Big Bunnie: 10-15 tokens (15 dahil deÄŸil, yani 10 â‰¤ x < 15)
+ * - Bunnie Holder: 1-4 tokens (5 dahil deÄŸil, yani 1 â‰¤ x < 5)
+ * - Bunnie Believer: 5-9 tokens (10 dahil deÄŸil, yani 5 â‰¤ x < 10)
+ * - Big Bunnie: 10-14 tokens (15 dahil deÄŸil, yani 10 â‰¤ x < 15)
  * - Whale Bunnie: 15+ tokens (15 dahil ve Ã¼stÃ¼, yani x â‰¥ 15)
  * @param {Array} holders - Array of holder objects (should be pre-filtered to exclude excluded addresses)
  * @param {Object} tiers - Tier configuration { tierName: { min, max } }
@@ -16,10 +16,10 @@
  */
 export function classifyByTokenCount(holders, tiers = null) {
   const defaultTiers = {
-    'Bunnie Holder': { min: 1, max: 4 }, // 1 â‰¤ x < 5
-    'Bunnie Believer': { min: 5, max: 9 }, // 5 â‰¤ x < 10
-    'Big Bunnie': { min: 10, max: 14 }, // 10 â‰¤ x < 15
-    'Whale Bunnie': { min: 15, max: Infinity } // x â‰¥ 15
+    'Bunnie Holder': { min: 1, max: 4 },
+    'Bunnie Believer': { min: 5, max: 9 },
+    'Big Bunnie': { min: 10, max: 14 },
+    'Whale Bunnie': { min: 15, max: Infinity }
   };
 
   const tierConfig = tiers || defaultTiers;
