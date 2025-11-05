@@ -1,2 +1,0 @@
-# inkbunnies-giveaway
-giveawaysbot
