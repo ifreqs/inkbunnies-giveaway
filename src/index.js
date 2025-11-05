@@ -1,4 +1,4 @@
-﻿import { loadHoldersSummary, saveGroups, loadGroups, filterExcludedAddresses, EXCLUDED_ADDRESS, saveGroupsToCSV, saveJSON } from './utils/dataLoader.js';
+import { loadHoldersSummary, saveGroups, loadGroups, filterExcludedAddresses, EXCLUDED_ADDRESS, saveGroupsToCSV, saveJSON } from './utils/dataLoader.js';
 import { 
   classifyByTokenCount, 
   classifyByAddressPrefix, 
