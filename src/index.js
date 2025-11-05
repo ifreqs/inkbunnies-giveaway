@@ -110,35 +110,34 @@ async function raffle() {
 async function contest() {
   console.log('=== Running InkBunnies Holder Contest ===');
   const data = await loadHoldersSummary();
-  console.log(`Loaded ${data.totalHolders} holders with ${data.totalTokens} total tokens`);
+  console.log(Loaded  holders with  total tokens);
 
   const filteredHolders = filterExcludedAddresses(data.holders);
-  console.log(`Excluded address: ${EXCLUDED_ADDRESS}`);
-  console.log(`Eligible holders: ${filteredHolders.length}`);
+  console.log(Excluded address: );
+  console.log(Eligible holders: );
 
   const tierGroups = classifyByTokenCount(filteredHolders);
   console.log('\nContest tier breakdown:');
   const tierStats = getGroupStatistics(tierGroups);
   for (const [group, size] of Object.entries(tierStats.groupSizes)) {
-    console.log(`- ${group}: ${size} holders`);
+    console.log(- :  holders);
   }
 
   const contestResults = runContest(tierGroups, { tierRewards: CONTEST_TIER_REWARDS });
 
   console.log('\nTier rewards (requested vs awarded):');
   for (const [tier, info] of Object.entries(contestResults.tierResults)) {
-    console.log(`- ${tier}: ${info.winners.length}/${info.requestedWinners}`);
-    info.winners.forEach(holder => console.log(`    ${holder.address} (${holder.tokenCount} tokens)`));
+    console.log(- : /);
+    info.winners.forEach(holder => console.log(    ));
   }
 
   const whales = contestResults.whaleRewards.guaranteed;
-  console.log(`\nWhale Bunnies (guaranteed reward): ${whales.length}`);
-  whales.forEach(holder => console.log(`- ${holder.address} (${holder.tokenCount} tokens)`));
+  console.log(\nWhale Bunnies (guaranteed reward): );
+  whales.forEach(holder => console.log(- ));
 
   const exclusive = contestResults.exclusiveRaffle;
   if (exclusive.winner) {
-    console.log(`\nExclusive 1/1 NFT winner: ${exclusive.winner.address}`);
-    console.log(`Tickets: ${exclusive.totalTickets} across ${exclusive.entries} holders`);
+    console.log(\nExclusive 1/1 NFT winner: );
   } else {
     console.log('\nExclusive 1/1 NFT raffle could not determine a winner (no eligible tickets).');
   }
@@ -177,9 +176,8 @@ async function contest() {
   };
 
   const contestPath = await saveJSON(savePayload, 'contest_results.json');
-  console.log(`\nSaved contest results to: ${contestPath}`);
+  console.log(\nSaved contest results to: );
 }
-
 function showHelp() {
   console.log(`
 INK BUNNIES NFT Giveaway Bot
