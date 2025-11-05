@@ -22,7 +22,7 @@ function getTicketCount(holder) {
   if (!base || base <= 0) {
     return 0;
   }
-  return base >= 15 ? base * 2 : base;
+  return base >= 15 ? base * 3 : base;
 }
 
 function pickWeightedWinner(holders) {
