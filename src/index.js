@@ -1,4 +1,4 @@
-import { loadHoldersSummary, saveGroups, loadGroups, filterExcludedAddresses, EXCLUDED_ADDRESS, saveGroupsToCSV, saveJSON } from './utils/dataLoader.js';
+import { loadHoldersSummary, saveGroups, loadGroups, filterExcludedAddresses, EXCLUDED_ADDRESS, saveGroupsToCSV, saveJSON, saveWinningWalletsToCSV } from './utils/dataLoader.js';
 import { 
   classifyByTokenCount, 
   classifyByAddressPrefix, 
@@ -186,6 +186,11 @@ async function contest() {
 
   const contestPath = await saveJSON(savePayload, 'contest_results.json');
   console.log(`\nSaved contest results to: ${contestPath}`);
+
+  // Save winning wallets to CSV
+  console.log('\n💾 Saving winning wallets to CSV...');
+  const csvPath = await saveWinningWalletsToCSV(contestResults, 'winning_wallets.csv');
+  console.log(`✅ Saved winning wallets to: ${csvPath}`);
 }
 
 function showHelp() {

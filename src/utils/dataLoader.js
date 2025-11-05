@@ -1,4 +1,4 @@
-﻿import fs from 'fs/promises';
+import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -120,13 +120,89 @@ export async function saveGroupsToCSV(groups, outputDir = 'data') {
 }
 
 /**
- * Saves arbitrary data as a JSON file within the data directory
- * @param {any} data - Serializable data to persist
+ * Saves JSON data to a file
+ * @param {Object} data - The data to save
  * @param {string} filename - Output filename
- * @returns {Promise<string>} Path to saved file
+ * @returns {Promise<string>} Path to the saved file
  */
 export async function saveJSON(data, filename = 'output.json') {
   const filePath = path.join(__dirname, '../../data', filename);
   await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
   return filePath;
 }
+
+/**
+ * Extracts all winning wallets from contest results and saves to CSV
+ * @param {Object} contestResults - Contest results object with tierResults, whaleRewards, and exclusiveRaffle
+ * @param {string} filename - Output CSV filename (default: winning_wallets.csv)
+ * @returns {Promise<string>} Path to the saved CSV file
+ */
+export async function saveWinningWalletsToCSV(contestResults, filename = 'winning_wallets.csv') {
+  const allWinners = [];
+  
+  // Extract tier winners
+  if (contestResults.tierResults) {
+    for (const [tier, info] of Object.entries(contestResults.tierResults)) {
+      if (info.winners && Array.isArray(info.winners)) {
+        for (const winner of info.winners) {
+          allWinners.push({
+            address: winner.address,
+            tokenCount: winner.tokenCount,
+            tokens: winner.tokens,
+            category: tier,
+            rewardType: 'Tier Winner'
+          });
+        }
+      }
+    }
+  }
+  
+  // Extract whale rewards (guaranteed)
+  if (contestResults.whaleRewards && contestResults.whaleRewards.guaranteed) {
+    for (const whale of contestResults.whaleRewards.guaranteed) {
+      allWinners.push({
+        address: whale.address,
+        tokenCount: whale.tokenCount,
+        tokens: whale.tokens,
+        category: 'Whale Bunnie',
+        rewardType: 'Guaranteed Reward'
+      });
+    }
+  }
+  
+  // Extract exclusive raffle winner
+  if (contestResults.exclusiveRaffle && contestResults.exclusiveRaffle.winner) {
+    const winner = contestResults.exclusiveRaffle.winner;
+    allWinners.push({
+      address: winner.address,
+      tokenCount: winner.tokenCount,
+      tokens: winner.tokens,
+      category: 'Exclusive',
+      rewardType: '1/1 Exclusive NFT'
+    });
+  }
+  
+  // Convert to CSV format
+  if (allWinners.length === 0) {
+    const csvContent = 'Address,TokenCount,Tokens,Category,RewardType\n';
+    const filePath = path.join(__dirname, '../../data', filename);
+    await fs.writeFile(filePath, csvContent, 'utf-8');
+    return filePath;
+  }
+  
+  const headers = ['Address', 'TokenCount', 'Tokens', 'Category', 'RewardType'];
+  const rows = allWinners.map(winner => {
+    const address = winner.address;
+    const tokenCount = winner.tokenCount || 0;
+    const tokens = winner.tokens ? winner.tokens.join(';') : '';
+    const category = winner.category || '';
+    const rewardType = winner.rewardType || '';
+    return [address, tokenCount, tokens, category, rewardType].join(',');
+  });
+  
+  const csvContent = [headers.join(','), ...rows].join('\n');
+  const filePath = path.join(__dirname, '../../data', filename);
+  await fs.writeFile(filePath, csvContent, 'utf-8');
+  return filePath;
+}
+
