@@ -17,20 +17,28 @@ function flattenGroups(groups) {
   return all;
 }
 
+function getTicketCount(holder) {
+  const base = holder?.tokenCount ?? (holder?.tokens ? holder.tokens.length : 0);
+  if (!base || base <= 0) {
+    return 0;
+  }
+  return base >= 15 ? base * 2 : base;
+}
+
 function pickWeightedWinner(holders) {
-  const eligible = holders.filter(holder => holder && holder.tokenCount > 0);
+  const eligible = holders.filter(holder => getTicketCount(holder) > 0);
   if (eligible.length === 0) {
     return null;
   }
 
-  const totalTickets = eligible.reduce((sum, holder) => sum + holder.tokenCount, 0);
+  const totalTickets = eligible.reduce((sum, holder) => sum + getTicketCount(holder), 0);
   if (totalTickets === 0) {
     return null;
   }
 
   let threshold = crypto.randomInt(totalTickets);
   for (const holder of eligible) {
-    threshold -= holder.tokenCount;
+    threshold -= getTicketCount(holder);
     if (threshold < 0) {
       return {
         winner: holder,
