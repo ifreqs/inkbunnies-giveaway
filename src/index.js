@@ -21,123 +21,132 @@ const __dirname = path.dirname(__filename);
 const command = process.argv[2] || 'help';
 
 const CONTEST_TIER_REWARDS = {
-  'Bunnie Holder': 3,
-  'Bunnie Believer': 6,
-  'Big Bunnie': 3
+  "Bunnie Holder": 3,
+  "Bunnie Believer": 6,
+  "Big Bunnie": 3
 };
 
 const CONTEST_RULES = {
-  description: 'InkBunnies Holder Contest',
+  description: "InkBunnies Holder Contest",
   tierRewards: {
-    'Bunnie Holder (1-4 NFTs)': '3 winners',
-    'Bunnie Believer (5-9 NFTs)': '6 winners',
-    'Big Bunnie (10-14 NFTs)': '3 winners',
-    'Whale Bunnie (15+ NFTs)': 'All holders receive 1 guaranteed NFT'
+    "Bunnie Holder (1-4 NFTs)": "3 winners",
+    "Bunnie Believer (5-9 NFTs)": "6 winners",
+    "Big Bunnie (10-14 NFTs)": "3 winners",
+    "Whale Bunnie (15+ NFTs)": "All holders receive 1 guaranteed NFT"
   },
-  exclusiveRaffle: 'Every NFT held = 1 ticket for the 1/1 Exclusive NFT'
+  exclusiveRaffle: "Every NFT held = 1 ticket for the 1/1 Exclusive NFT"
 };
 
 async function classify() {
-  console.log('=== Loading holders summary ===');
+  console.log('📊 Loading holders summary...');
   const data = await loadHoldersSummary();
-  console.log(`Loaded ${data.totalHolders} holders with ${data.totalTokens} total tokens`);
-
-  console.log(`\nExcluded address: ${EXCLUDED_ADDRESS}`);
+  
+  console.log(`✅ Loaded ${data.totalHolders} holders with ${data.totalTokens} total tokens`);
+  
+  console.log(`\n🚫 Excluding address: ${EXCLUDED_ADDRESS}`);
   const filteredHolders = filterExcludedAddresses(data.holders);
-  console.log(`Excluded ${data.holders.length - filteredHolders.length} holder(s)`);
-  console.log(`Eligible holders: ${filteredHolders.length}`);
-
-  console.log('\nClassifying holders into groups...');
+  const excludedCount = data.holders.length - filteredHolders.length;
+  
+  console.log(`   Excluded ${excludedCount} holder(s) from classification`);
+  console.log(`   Eligible holders: ${filteredHolders.length}`);
+  
+  console.log('\n🔀 Classifying holders into groups...');
+  
   const tierGroups = classifyByTokenCount(filteredHolders);
   const tierStats = getGroupStatistics(tierGroups);
-
-  console.log('\nTier breakdown:');
+  
+  console.log('\n📈 Tier-based Classification:');
+  console.log(`   Total Groups: ${tierStats.totalGroups}`);
+  console.log(`   Total Holders: ${tierStats.totalHolders}`);
+  console.log('   Group Sizes:');
   for (const [group, size] of Object.entries(tierStats.groupSizes)) {
-    console.log(`- ${group}: ${size} holders`);
+    console.log(`     ${group}: ${size} holders`);
   }
-
+  
   const outputPath = await saveGroups(tierGroups, 'tier_groups.json');
-  console.log(`\nSaved groups to: ${outputPath}`);
-
-  console.log('\nExporting tier CSV files...');
+  console.log(`\n💾 Saved groups to: ${outputPath}`);
+  
+  console.log('\n📄 Exporting groups to CSV files...');
   const csvFiles = await saveGroupsToCSV(tierGroups);
+  console.log('   CSV files created:');
   for (const { groupName, filePath } of csvFiles) {
     const fileName = path.basename(filePath);
-    console.log(`- ${groupName}: ${fileName}`);
+    console.log(`     ✓ ${groupName}: ${fileName}`);
   }
 }
 
 async function raffle() {
-  console.log('=== Running raffle ===');
-  console.log(`Excluded address: ${EXCLUDED_ADDRESS}`);
-
+  console.log('🎰 Starting raffle...');
+  console.log(`🚫 Excluded address: ${EXCLUDED_ADDRESS}`);
+  
   let groups;
   try {
     groups = await loadGroups('tier_groups.json');
-    console.log('Using existing tier_groups.json');
+    console.log('✅ Loaded existing groups');
   } catch (error) {
-    console.log('tier_groups.json not found. Classifying holders first...');
+    console.log('⚠️  No groups found. Running classification first...');
     const data = await loadHoldersSummary();
     const filteredHolders = filterExcludedAddresses(data.holders);
     groups = classifyByTokenCount(filteredHolders);
     await saveGroups(groups, 'tier_groups.json');
   }
-
+  
   const stats = getGroupStatistics(groups);
-  console.log(`Groups available: ${stats.totalGroups}`);
-  console.log(`Eligible holders: ${stats.totalHolders}`);
-
-  console.log('\nSelecting winners (1 per group)...');
+  console.log(`\n📊 Groups: ${stats.totalGroups}, Total Holders: ${stats.totalHolders}`);
+  console.log(`   Note: Excluded address has been filtered out`);
+  
+  console.log('\n🎲 Selecting winners...');
   const winners = selectWinnersFromGroups(groups, 1);
   const winnerStats = getWinnerStatistics(winners);
-
+  
+  console.log('\n🏆 Winners:');
   for (const [groupName, groupWinners] of Object.entries(winners)) {
-    console.log(`\n${groupName}:`);
+    console.log(`\n   ${groupName.toUpperCase()}:`);
     for (const winner of groupWinners) {
-      console.log(`- ${winner.address} (${winner.tokenCount} tokens)`);
+      console.log(`     🎉 ${winner.address} (${winner.tokenCount} tokens)`);
     }
   }
-
-  console.log('\nWinner statistics:');
-  console.log(`Total winners: ${winnerStats.totalWinners}`);
-  console.log(`Unique winners: ${winnerStats.uniqueWinnerCount}`);
-
+  
+  console.log('\n📈 Winner Statistics:');
+  console.log(`   Total Winners: ${winnerStats.totalWinners}`);
+  console.log(`   Unique Winners: ${winnerStats.uniqueWinnerCount}`);
+  
   const winnersPath = path.join(__dirname, '../data', 'winners.json');
   await fs.writeFile(winnersPath, JSON.stringify(winners, null, 2), 'utf-8');
-  console.log(`\nSaved winners to: ${winnersPath}`);
+  console.log(`\n💾 Saved winners to: ${winnersPath}`);
 }
 
 async function contest() {
   console.log('=== Running InkBunnies Holder Contest ===');
   const data = await loadHoldersSummary();
-  console.log(Loaded  holders with  total tokens);
+  console.log(`Loaded ${data.totalHolders} holders with ${data.totalTokens} total tokens`);
 
   const filteredHolders = filterExcludedAddresses(data.holders);
-  console.log(Excluded address: );
-  console.log(Eligible holders: );
+  console.log(`Excluded address: ${EXCLUDED_ADDRESS}`);
+  console.log(`Eligible holders: ${filteredHolders.length}`);
 
   const tierGroups = classifyByTokenCount(filteredHolders);
   console.log('\nContest tier breakdown:');
   const tierStats = getGroupStatistics(tierGroups);
   for (const [group, size] of Object.entries(tierStats.groupSizes)) {
-    console.log(- :  holders);
+    console.log(`- ${group}: ${size} holders`);
   }
 
   const contestResults = runContest(tierGroups, { tierRewards: CONTEST_TIER_REWARDS });
 
   console.log('\nTier rewards (requested vs awarded):');
   for (const [tier, info] of Object.entries(contestResults.tierResults)) {
-    console.log(- : /);
-    info.winners.forEach(holder => console.log(    ));
+    console.log(`- ${tier}: ${info.winners.length}/${info.requestedWinners}`);
+    info.winners.forEach(holder => console.log(`    ${holder.address}`));
   }
 
   const whales = contestResults.whaleRewards.guaranteed;
-  console.log(\nWhale Bunnies (guaranteed reward): );
-  whales.forEach(holder => console.log(- ));
+  console.log(`\nWhale Bunnies (guaranteed reward): ${whales.length}`);
+  whales.forEach(holder => console.log(`- ${holder.address}`));
 
   const exclusive = contestResults.exclusiveRaffle;
   if (exclusive.winner) {
-    console.log(\nExclusive 1/1 NFT winner: );
+    console.log(`\nExclusive 1/1 NFT winner: ${exclusive.winner.address}`);
   } else {
     console.log('\nExclusive 1/1 NFT raffle could not determine a winner (no eligible tickets).');
   }
@@ -176,8 +185,9 @@ async function contest() {
   };
 
   const contestPath = await saveJSON(savePayload, 'contest_results.json');
-  console.log(\nSaved contest results to: );
+  console.log(`\nSaved contest results to: ${contestPath}`);
 }
+
 function showHelp() {
   console.log(`
 INK BUNNIES NFT Giveaway Bot
